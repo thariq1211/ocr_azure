@@ -1,0 +1,9 @@
+{
+  "apps" : [
+	{
+	  "name" : "ocr-azure",
+	  "script" : "npm",
+	  "args" : "start"
+	}
+	   ]
+}
