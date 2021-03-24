@@ -35,6 +35,9 @@ function computerVision() {
 app.use(express.json());
 app.use(cors());
 app.use("/api/ocr", ocrRoutes);
+app.get("/", (req, res) => {
+  res.sendStatus(200);
+});
 const port = process.env.port || 5000;
 http.createServer(app).listen(port, () => {
   console.log("server up ", port);

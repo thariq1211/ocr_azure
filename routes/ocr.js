@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const computerVisionClient = require("./../helpers/computerVision");
+const { createWorker, createScheduler } = require("tesseract.js");
 const {
   readTextFromURL,
   printRecText,
@@ -96,6 +97,53 @@ router.post("/scan_ktp", async (req, res) => {
     } catch (error) {
       res.send({ message: error.message });
     }
+  }
+});
+
+router.post("/scan_ktp1", async (req, res) => {
+  const { ktp_url } = req.body;
+  const scheduler = createScheduler();
+  const worker1 = createWorker({
+    logger: (m) => console.log("worker1: ", m),
+    errorHandler: (err) => console.log(err.message),
+  });
+  const worker2 = createWorker({
+    logger: (m) => console.log("worker2: ", m),
+    errorHandler: (err) => console.log(err.message),
+  });
+  // const worker = createWorker({
+  //   logger: (m) =>
+  //     console.log(`${m.status}: ${Math.round(m.progress * 100, 2)}%`),
+  //   errorHandler: (err) => console.log(err.message),
+  //   cachePath: "../",
+  // });
+  try {
+    await worker1.load();
+    await worker2.load();
+
+    // await worker.load();
+    await worker1.loadLanguage("eng+ind");
+    await worker2.loadLanguage("eng+ind");
+
+    await worker1.initialize("eng+ind");
+    await worker2.initialize("eng+ind");
+
+    scheduler.addWorker(worker1);
+    scheduler.addWorker(worker2);
+
+    const results = await Promise.all(
+      Array(2)
+        .fill(0)
+        .map(() => scheduler.addJob("recognize", ktp_url))
+    );
+    // const {
+    //   data: { text },
+    // } = await worker.recognize(url_ktp);
+    // const resultArray = text.split("\n");
+    res.send(results[0].data.text.split("\n"));
+    await scheduler.terminate();
+  } catch (error) {
+    res.send({ message: error.message });
   }
 });
 
