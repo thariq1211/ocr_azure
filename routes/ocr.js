@@ -12,7 +12,7 @@ router.get("/", (req, res) => {
   res.sendStatus(204);
 });
 
-router.post("/scan_ktp", async (req, res) => {
+router.post("/azure/scan_ktp", async (req, res) => {
   const { ktp_url } = req.body;
   if (!ktp_url) {
     res.json({ message: "ktp_url is required" });
@@ -100,7 +100,7 @@ router.post("/scan_ktp", async (req, res) => {
   }
 });
 
-router.post("/scan_ktp1", async (req, res) => {
+router.post("/tesseract/scan_ktp", async (req, res) => {
   const { ktp_url } = req.body;
   if (ktp_url) {
     const scheduler = createScheduler();
