@@ -8,6 +8,58 @@ const {
   searchInArray,
 } = require("./../helpers");
 
+let schedulerPost;
+
+async function init() {
+  const scheduler = createScheduler();
+  const worker1 = createWorker({
+    logger: (m) => console.log(
+      "worker1: ",
+      m.status,
+      " ",
+      Math.round(m.progress * 100, 2)
+    ),
+    errorHandler: (err) => console.log(err.message),
+  });
+  const worker2 = createWorker({
+    logger: (m) => console.log(
+      "worker2: ",
+      m.status,
+      " ",
+      Math.round(m.progress * 100, 2)
+    ),
+    errorHandler: (err) => console.log(err.message),
+  });
+  const worker3 = createWorker({
+    logger: (m) => console.log(
+      "worker3: ",
+      m.status,
+      " ",
+      Math.round(m.progress * 100, 2)
+    ),
+    errorHandler: (err) => console.log(err.message),
+  });
+
+  await worker1.load();
+  await worker2.load();
+  await worker3.load();
+
+  await worker1.loadLanguage("ind");
+  await worker2.loadLanguage("ind");
+  await worker3.loadLanguage("ind");
+
+  await worker1.initialize("ind");
+  await worker2.initialize("ind");
+  await worker3.initialize("ind");
+
+  scheduler.addWorker(worker1);
+  scheduler.addWorker(worker2);
+  scheduler.addWorker(worker3);
+  schedulerPost = scheduler;
+}
+
+init();
+
 router.get("/", (req, res) => {
   res.sendStatus(204);
 });
@@ -103,48 +155,15 @@ router.post("/azure/scan_ktp", async (req, res) => {
 router.post("/tesseract/scan_ktp", async (req, res) => {
   const { ktp_url } = req.body;
   if (ktp_url) {
-    const scheduler = createScheduler();
-    const worker1 = createWorker({
-      logger: (m) =>
-        console.log(
-          "worker1: ",
-          m.status,
-          " ",
-          Math.round(m.progress * 100, 2)
-        ),
-      errorHandler: (err) => console.log(err.message),
-    });
-    const worker2 = createWorker({
-      logger: (m) =>
-        console.log(
-          "worker2: ",
-          m.status,
-          " ",
-          Math.round(m.progress * 100, 2)
-        ),
-      errorHandler: (err) => console.log(err.message),
-    });
     try {
-      await worker1.load();
-      await worker2.load();
-
-      await worker1.loadLanguage("eng+ind");
-      await worker2.loadLanguage("eng+ind");
-
-      await worker1.initialize("eng+ind");
-      await worker2.initialize("eng+ind");
-
-      scheduler.addWorker(worker1);
-      scheduler.addWorker(worker2);
-
       const results = await Promise.all(
         Array(2)
           .fill(0)
-          .map(() => scheduler.addJob("recognize", ktp_url))
+          .map(() => schedulerPost.addJob("recognize", ktp_url))
       );
       const output = results[0].data.text.split("\n");
       res.send(output);
-      await scheduler.terminate();
+      // await scheduler.terminate();
     } catch (error) {
       res.send({ message: error.message });
     }
@@ -154,3 +173,5 @@ router.post("/tesseract/scan_ktp", async (req, res) => {
 });
 
 module.exports = router;
+
+
